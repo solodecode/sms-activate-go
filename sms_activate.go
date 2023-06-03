@@ -9,14 +9,20 @@ const (
 	apiKeyLength          = 32
 	apiBaseURL            = "https://api.sms-activate.org/stubs/handler_api.php"
 	maxAvailableCountries = 196
+	serviceCodeMinLength  = 2
 )
 
 const (
-	apiKeyQuery   = "api_key"
-	actionQuery   = "action"
-	countryQuery  = "country"
-	serviceQuery  = "service"
-	operatorQuery = "operator"
+	apiKeyQuery         = "api_key"
+	actionQuery         = "action"
+	countryQuery        = "country"
+	serviceQuery        = "service"
+	operatorQuery       = "operator"
+	freePriceQuery      = "freePrice"
+	forwardQuery        = "forward"
+	maxPriceQuery       = "maxPrice"
+	phoneExceptionQuery = "phoneException"
+	verificationQuery   = "verification"
 )
 
 type (
@@ -24,6 +30,12 @@ type (
 		APIKey     string
 		BaseURL    *url.URL
 		httpClient http.Client
+	}
+	baseRequest struct {
+		APIKey  string `url:"api_key"`
+		Action  string `url:"action"`
+		Service string `url:"service,omitempty"`
+		Country int    `url:"country,omitempty"`
 	}
 )
 

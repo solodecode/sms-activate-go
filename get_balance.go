@@ -23,18 +23,17 @@ const (
 //	}
 //	fmt.Printf("Balance: %s", balance)
 func (act *SMSActivate) GetBalance() (float64, error) {
-	query := map[string]string{
-		apiKeyQuery: act.APIKey,
-		actionQuery: balanceAction,
-	}
-
 	req, _ := http.NewRequest(http.MethodGet, act.BaseURL.String(), nil)
 
-	q := req.URL.Query()
-	for k, v := range query {
-		q.Add(k, v)
+	balanceReq := baseRequest{
+		APIKey: act.APIKey,
+		Action: balanceAction,
 	}
-	req.URL.RawQuery = q.Encode()
+	val, err := Values(balanceReq)
+	if err != nil {
+		return 0, err
+	}
+	req.URL.RawQuery = val.Encode()
 
 	resp, err := act.httpClient.Do(req)
 	if err != nil {

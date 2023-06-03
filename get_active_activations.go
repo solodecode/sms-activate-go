@@ -6,7 +6,7 @@ import (
 	"net/http"
 )
 
-const activationsQuery = "getActiveActivations"
+const activationsAction = "getActiveActivations"
 
 type (
 	ActivationList struct {
@@ -30,18 +30,17 @@ type (
 )
 
 func (act *SMSActivate) GetActiveActivations() (ActivationList, error) {
-	query := map[string]string{
-		apiKeyQuery: act.APIKey,
-		actionQuery: activationsQuery,
-	}
-
 	req, _ := http.NewRequest(http.MethodGet, act.BaseURL.String(), nil)
 
-	q := req.URL.Query()
-	for k, v := range query {
-		q.Add(k, v)
+	activationsReq := baseRequest{
+		APIKey: act.APIKey,
+		Action: activationsAction,
 	}
-	req.URL.RawQuery = q.Encode()
+	val, err := Values(activationsReq)
+	if err != nil {
+		return ActivationList{}, err
+	}
+	req.URL.RawQuery = val.Encode()
 
 	resp, err := act.httpClient.Do(req)
 	if err != nil {

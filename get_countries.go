@@ -36,18 +36,17 @@ const countriesAction = "getCountries"
 //		fmt.Printf("Country Code: %s. Country Name: %s. Can be rented: %d. Visible: %d\n", k, v.EngName, v.Rent, v.Visible)
 //	}
 func (act *SMSActivate) GetCountries() (Countries, error) {
-	query := map[string]string{
-		apiKeyQuery: act.APIKey,
-		actionQuery: countriesAction,
-	}
-
 	req, _ := http.NewRequest(http.MethodGet, act.BaseURL.String(), nil)
 
-	q := req.URL.Query()
-	for k, v := range query {
-		q.Add(k, v)
+	countriesReq := baseRequest{
+		APIKey: act.APIKey,
+		Action: countriesAction,
 	}
-	req.URL.RawQuery = q.Encode()
+	val, err := Values(countriesReq)
+	if err != nil {
+		return nil, err
+	}
+	req.URL.RawQuery = val.Encode()
 
 	resp, err := act.httpClient.Do(req)
 	if err != nil {

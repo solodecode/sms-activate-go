@@ -4,7 +4,6 @@ import (
 	"encoding/json"
 	"io"
 	"net/http"
-	"strconv"
 	"strings"
 )
 
@@ -16,29 +15,27 @@ const (
 )
 
 func (act *SMSActivate) GetAvailableNumbers(country int, operator []string) (map[string]string, error) {
-	if country < -1 || country > maxAvailableCountries {
+	if country < 0 || country > maxAvailableCountries {
 		return nil, BadCountryNum
-	}
-	query := map[string]string{
-		apiKeyQuery: act.APIKey,
-		actionQuery: numsStatusAction,
-	}
-	if country > -1 {
-		query[countryQuery] = strconv.Itoa(country)
 	}
 
 	req, _ := http.NewRequest(http.MethodGet, act.BaseURL.String(), nil)
 
-	q := req.URL.Query()
+	numsReq := baseRequest{
+		APIKey:  apiKeyQuery,
+		Action:  numsStatusAction,
+		Country: country,
+	}
+	val, err := Values(numsReq)
+	if err != nil {
+		return nil, err
+	}
 	if country == RussiaID || country == UkraineID || country == KazakhstanID {
 		var operators string
 		operators = strings.Join(operator, ",")
-		q.Add(operatorQuery, operators)
+		val.Add(operatorQuery, operators)
 	}
-	for k, v := range query {
-		q.Add(k, v)
-	}
-	req.URL.RawQuery = q.Encode()
+	req.URL.RawQuery = val.Encode()
 
 	resp, err := act.httpClient.Do(req)
 	if err != nil {
