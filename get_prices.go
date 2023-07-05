@@ -5,7 +5,6 @@ import (
 	"io"
 	"net/http"
 	"strconv"
-	"strings"
 )
 
 type (
@@ -67,12 +66,6 @@ func (act *SMSActivate) GetPrices(service string, country int) (map[string]map[s
 		return nil, ErrBadKey
 	case ErrorSQL:
 		return nil, ErrSQL
-	}
-	// coz malformed response
-	if country == 0 {
-		temp := string(body)[1 : len(string(body))-1]
-		temp = strings.Join([]string{`{"0":`, temp, `}`}, "")
-		body = []byte(temp)
 	}
 	var data map[string]map[string]Info
 	err = json.Unmarshal(body, &data)

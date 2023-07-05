@@ -50,7 +50,7 @@ func (act *SMSActivate) GetAvailableNumbers(country int, operator []string) (map
 	case ErrorSQL:
 		return nil, ErrSQL
 	}
-	var data map[string]string
+	data := make(map[string]string)
 	err = json.Unmarshal(body, &data)
 	if err != nil {
 		return nil, err
