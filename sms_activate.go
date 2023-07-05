@@ -23,19 +23,22 @@ const (
 	maxPriceQuery       = "maxPrice"
 	phoneExceptionQuery = "phoneException"
 	verificationQuery   = "verification"
+	refCode             = "194015"
 )
 
 type (
 	SMSActivate struct {
 		APIKey     string
 		BaseURL    *url.URL
+		RefCode    string
 		httpClient http.Client
 	}
 	baseRequest struct {
-		APIKey  string `url:"api_key"`
-		Action  string `url:"action"`
-		Service string `url:"service,omitempty"`
-		Country int    `url:"country,omitempty"`
+		APIKey       string `url:"api_key"`
+		Action       string `url:"action"`
+		Service      string `url:"service,omitempty"`
+		Country      int    `url:"country,omitempty"`
+		ActivationID string `url:"id,omitempty"`
 	}
 )
 
@@ -48,6 +51,7 @@ func New(apikey string) (*SMSActivate, error) {
 		APIKey:     apikey,
 		BaseURL:    baseURL,
 		httpClient: http.Client{},
+		RefCode:    refCode,
 	}
 	return act, nil
 }
