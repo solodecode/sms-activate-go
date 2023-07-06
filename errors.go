@@ -23,4 +23,5 @@ var (
 	ErrNoOperators       = errors.New("have no operators in this country")
 	ErrNoActivations     = errors.New("have no active activations")
 	ErrWrongActivationID = errors.New("wrong activation id")
+	ErrWrongStatus       = errors.New("wrong status provided")
 )

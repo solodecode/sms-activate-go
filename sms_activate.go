@@ -39,6 +39,7 @@ type (
 		Service      string `url:"service,omitempty"`
 		Country      int    `url:"country,omitempty"`
 		ActivationID string `url:"id,omitempty"`
+		Status       int    `url:"status,omitempty"`
 	}
 )
 
