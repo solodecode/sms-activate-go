@@ -2,6 +2,7 @@ package sms_activate_go
 
 import (
 	"encoding/json"
+	"github.com/google/go-querystring/query"
 	"io"
 	"net/http"
 )
@@ -36,7 +37,7 @@ func (act *SMSActivate) GetActiveActivations() (ActivationList, error) {
 		APIKey: act.APIKey,
 		Action: activationsAction,
 	}
-	val, err := Values(activationsReq)
+	val, err := query.Values(activationsReq)
 	if err != nil {
 		return ActivationList{}, err
 	}

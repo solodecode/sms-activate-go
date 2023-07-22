@@ -2,6 +2,7 @@ package sms_activate_go
 
 import (
 	"encoding/json"
+	"github.com/google/go-querystring/query"
 	"io"
 	"net/http"
 )
@@ -33,7 +34,7 @@ type (
 func (act *SMSActivate) GetNumber(request GetNumberRequest) (Number, error) {
 	req, _ := http.NewRequest(http.MethodGet, act.BaseURL.String(), nil)
 
-	val, err := Values(request)
+	val, err := query.Values(request)
 	if err != nil {
 		return Number{}, err
 	}

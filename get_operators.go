@@ -2,9 +2,9 @@ package sms_activate_go
 
 import (
 	"encoding/json"
+	"github.com/google/go-querystring/query"
 	"io"
 	"net/http"
-	"strconv"
 )
 
 type CountryOperators struct {
@@ -14,24 +14,22 @@ type CountryOperators struct {
 const operatorsAction = "getOperators"
 
 func (act *SMSActivate) GetOperators(country int) (CountryOperators, error) {
-	if country < -1 || country > maxAvailableCountries {
+	if country < 0 || country > maxAvailableCountries {
 		return CountryOperators{}, BadCountryNum
-	}
-	query := map[string]string{
-		apiKeyQuery: act.APIKey,
-		actionQuery: operatorsAction,
-	}
-	if country > -1 {
-		query[countryQuery] = strconv.Itoa(country)
 	}
 
 	req, _ := http.NewRequest(http.MethodGet, act.BaseURL.String(), nil)
 
-	q := req.URL.Query()
-	for k, v := range query {
-		q.Add(k, v)
+	operatorsReq := baseRequest{
+		APIKey:  act.APIKey,
+		Action:  operatorsAction,
+		Country: country,
 	}
-	req.URL.RawQuery = q.Encode()
+	val, err := query.Values(operatorsReq)
+	if err != nil {
+		return CountryOperators{}, err
+	}
+	req.URL.RawQuery = val.Encode()
 
 	resp, err := act.httpClient.Do(req)
 	if err != nil {

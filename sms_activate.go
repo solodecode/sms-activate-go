@@ -13,17 +13,10 @@ const (
 )
 
 const (
-	apiKeyQuery         = "api_key"
-	actionQuery         = "action"
-	countryQuery        = "country"
-	serviceQuery        = "service"
-	operatorQuery       = "operator"
-	freePriceQuery      = "freePrice"
-	forwardQuery        = "forward"
-	maxPriceQuery       = "maxPrice"
-	phoneExceptionQuery = "phoneException"
-	verificationQuery   = "verification"
-	refCode             = "194015"
+	apiKeyQuery   = "api_key"
+	actionQuery   = "action"
+	operatorQuery = "operator"
+	refCode       = "194015"
 )
 
 type (

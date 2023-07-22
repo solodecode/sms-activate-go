@@ -2,6 +2,7 @@ package sms_activate_go
 
 import (
 	"encoding/json"
+	"github.com/google/go-querystring/query"
 	"io"
 	"net/http"
 	"strings"
@@ -26,7 +27,7 @@ func (act *SMSActivate) GetAvailableNumbers(country int, operator []string) (map
 		Action:  numsStatusAction,
 		Country: country,
 	}
-	val, err := Values(numsReq)
+	val, err := query.Values(numsReq)
 	if err != nil {
 		return nil, err
 	}

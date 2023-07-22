@@ -1,6 +1,7 @@
 package sms_activate_go
 
 import (
+	"github.com/google/go-querystring/query"
 	"io"
 	"net/http"
 )
@@ -28,7 +29,7 @@ func (act *SMSActivate) SetStatus(id string, status int) (string, error) {
 		ActivationID: id,
 		Status:       status,
 	}
-	val, err := Values(setStatusReq)
+	val, err := query.Values(setStatusReq)
 	if err != nil {
 		return "", err
 	}

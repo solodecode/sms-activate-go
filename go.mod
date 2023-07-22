@@ -1,4 +1,4 @@
-module sms-activate-go
+module github.com/solodecode/sms-activate-go
 
 go 1.20
 

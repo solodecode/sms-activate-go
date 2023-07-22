@@ -2,9 +2,9 @@ package sms_activate_go
 
 import (
 	"encoding/json"
+	"github.com/google/go-querystring/query"
 	"io"
 	"net/http"
-	"strconv"
 )
 
 type (
@@ -35,24 +35,21 @@ func (act *SMSActivate) GetPrices(service string, country int) (map[string]map[s
 	if country < -1 || country > maxAvailableCountries {
 		return nil, BadCountryNum
 	}
-	query := map[string]string{
-		apiKeyQuery: act.APIKey,
-		actionQuery: pricesAction,
-	}
-	if len(service) > 0 {
-		query[serviceQuery] = service
-	}
-	if country > -1 {
-		query[countryQuery] = strconv.Itoa(country)
-	}
 
 	req, _ := http.NewRequest(http.MethodGet, act.BaseURL.String(), nil)
 
-	q := req.URL.Query()
-	for k, v := range query {
-		q.Add(k, v)
+	pricesReq := baseRequest{
+		APIKey:  act.APIKey,
+		Action:  pricesAction,
+		Service: service,
+		Country: country,
 	}
-	req.URL.RawQuery = q.Encode()
+
+	val, err := query.Values(pricesReq)
+	if err != nil {
+		return nil, err
+	}
+	req.URL.RawQuery = val.Encode()
 
 	resp, err := act.httpClient.Do(req)
 	if err != nil {

@@ -2,6 +2,7 @@ package sms_activate_go
 
 import (
 	"errors"
+	"github.com/google/go-querystring/query"
 	"io"
 	"net/http"
 	"strconv"
@@ -29,7 +30,7 @@ func (act *SMSActivate) GetBalance() (float64, error) {
 		APIKey: act.APIKey,
 		Action: balanceAction,
 	}
-	val, err := Values(balanceReq)
+	val, err := query.Values(balanceReq)
 	if err != nil {
 		return 0, err
 	}

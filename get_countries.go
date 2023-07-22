@@ -2,6 +2,7 @@ package sms_activate_go
 
 import (
 	"encoding/json"
+	"github.com/google/go-querystring/query"
 	"io"
 	"net/http"
 )
@@ -42,7 +43,7 @@ func (act *SMSActivate) GetCountries() (Countries, error) {
 		APIKey: act.APIKey,
 		Action: countriesAction,
 	}
-	val, err := Values(countriesReq)
+	val, err := query.Values(countriesReq)
 	if err != nil {
 		return nil, err
 	}
