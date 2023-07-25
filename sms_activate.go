@@ -51,7 +51,6 @@ func WithApiBaseUrl(url string) option {
 	}
 }
 
-
 func New(apikey string, opts ...option) (*SMSActivate, error) {
 	if len(apikey) != apiKeyLength {
 		return nil, ErrBadLengthKey
