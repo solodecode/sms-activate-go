@@ -70,6 +70,3 @@ func New(apikey string, opts ...option) (*SMSActivate, error) {
 
 	return act, nil
 }
-
-
-New("asdf")
