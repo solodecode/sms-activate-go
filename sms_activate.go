@@ -36,7 +36,23 @@ type (
 	}
 )
 
-func New(apikey string) (*SMSActivate, error) {
+type option func(*SMSActivate)
+
+func WithHttpClient(client http.Client) option {
+	return func(act *SMSActivate) {
+		act.httpClient = client
+	}
+}
+
+
+func WithApiBaseUrl(url string) option {
+	return func(act *SMSActivate) {
+		act.apiBaseURL = url
+	}
+}
+
+
+func New(apikey string, opts ...option) (*SMSActivate, error) {
 	if len(apikey) != apiKeyLength {
 		return nil, ErrBadLengthKey
 	}
@@ -47,5 +63,13 @@ func New(apikey string) (*SMSActivate, error) {
 		httpClient: http.Client{},
 		RefCode:    refCode,
 	}
+
+	for _, opFn := range opts {
+		opFn(act)
+	}
+
 	return act, nil
 }
+
+
+New("asdf")
