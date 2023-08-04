@@ -9,7 +9,6 @@ const (
 	apiKeyLength          = 32
 	apiBaseURL            = "https://api.sms-activate.org/stubs/handler_api.php"
 	maxAvailableCountries = 196
-	serviceCodeMinLength  = 2
 )
 
 const (
@@ -34,9 +33,28 @@ type (
 		ActivationID string `url:"id,omitempty"`
 		Status       int    `url:"status,omitempty"`
 	}
+	Option func(*SMSActivate)
 )
 
-func New(apikey string) (*SMSActivate, error) {
+func WithNonDefURL(newURL *url.URL) Option {
+	return func(act *SMSActivate) {
+		act.BaseURL = newURL
+	}
+}
+
+func WithRefCode(code string) Option {
+	return func(act *SMSActivate) {
+		act.RefCode = code
+	}
+}
+
+func WithHTTPClient(client http.Client) Option {
+	return func(act *SMSActivate) {
+		act.httpClient = client
+	}
+}
+
+func New(apikey string, option ...Option) (*SMSActivate, error) {
 	if len(apikey) != apiKeyLength {
 		return nil, ErrBadLengthKey
 	}
@@ -46,6 +64,9 @@ func New(apikey string) (*SMSActivate, error) {
 		BaseURL:    baseURL,
 		httpClient: http.Client{},
 		RefCode:    refCode,
+	}
+	for _, opt := range option {
+		opt(act)
 	}
 	return act, nil
 }
