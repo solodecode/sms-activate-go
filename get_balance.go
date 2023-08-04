@@ -1,12 +1,13 @@
 package sms_activate_go
 
 import (
-	"errors"
-	"github.com/google/go-querystring/query"
+	"fmt"
 	"io"
 	"net/http"
 	"strconv"
 	"strings"
+
+	"github.com/google/go-querystring/query"
 )
 
 const (
@@ -32,31 +33,50 @@ func (act *SMSActivate) GetBalance() (float64, error) {
 	}
 	val, err := query.Values(balanceReq)
 	if err != nil {
-		return 0, err
+		return 0, RequestError{
+			RequestName: balanceAction,
+			Err:         fmt.Errorf("%w: %w", ErrEncoding, err),
+		}
 	}
 	req.URL.RawQuery = val.Encode()
 
 	resp, err := act.httpClient.Do(req)
 	if err != nil {
-		return 0, err
+		return 0, RequestError{
+			RequestName: balanceAction,
+			Err:         fmt.Errorf("%w: %w", ErrWithReq, err),
+		}
 	}
 	defer resp.Body.Close()
 
-	body, _ := io.ReadAll(resp.Body)
+	body, err := io.ReadAll(resp.Body)
+	if err != nil {
+		return 0, RequestError{
+			RequestName: balanceAction,
+			Err:         fmt.Errorf("%w: %w", ErrBodyRead, err),
+		}
+	}
+
 	data := string(body)
+
 	switch {
 	case strings.HasPrefix(data, BalancePref):
 		balance := strings.TrimPrefix(data, BalancePref)
-		var fBal float64
-		fBal, err = strconv.ParseFloat(balance, 64)
-		if err != nil {
-			return 0, err
-		}
-		return fBal, nil
+		return strconv.ParseFloat(balance, 64)
 	case data == BadKey:
-		return 0, ErrBadKey
+		return 0, RequestError{
+			RequestName: balanceAction,
+			Err:         ErrBadKey,
+		}
 	case data == ErrorSQL:
-		return 0, ErrSQL
+		return 0, RequestError{
+			RequestName: balanceAction,
+			Err:         ErrSQL,
+		}
 	}
-	return 0, errors.New("unknown response: " + data)
+
+	return 0, RequestError{
+		RequestName: balanceAction,
+		Err:         fmt.Errorf("unknown response: %s", data),
+	}
 }

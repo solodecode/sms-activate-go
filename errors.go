@@ -1,6 +1,9 @@
 package sms_activate_go
 
-import "errors"
+import (
+	"errors"
+	"fmt"
+)
 
 const (
 	BadKey            = "BAD_KEY"
@@ -12,11 +15,24 @@ const (
 	WrongActivationID = "WRONG_ACTIVATION_ID"
 )
 
+type RequestError struct {
+	RequestName string
+	Err         error
+}
+
+func (r RequestError) Error() string {
+	return fmt.Sprintf("(%s):%v", r.RequestName, r.Err)
+}
+
 var (
+	ErrEncoding          = errors.New("error while encoding query")
+	ErrWithReq           = errors.New("error with doing request")
+	ErrBodyRead          = errors.New("error while reading body")
+	ErrUnmarshalling     = errors.New("error while unmarshalling body")
 	ErrBadLength         = errors.New("one or more params have wrong length")
 	ErrBadLengthKey      = errors.New("bad length key")
 	ErrBadKey            = errors.New("invalid API access key")
-	BadCountryNum        = errors.New("the country number must be at least -1 and no more than 196 where -1 is all countries")
+	BadCountryNum        = errors.New("the country number must be at least -1 and no more than 196")
 	ErrSQL               = errors.New("one of the params has an invalid value")
 	ErrNoNumbers         = errors.New("there are no free numbers for receiving SMS from this service")
 	ErrNoBalance         = errors.New("not enough funds on current api key")

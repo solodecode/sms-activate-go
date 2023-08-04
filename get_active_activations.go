@@ -2,9 +2,11 @@ package sms_activate_go
 
 import (
 	"encoding/json"
-	"github.com/google/go-querystring/query"
+	"fmt"
 	"io"
 	"net/http"
+
+	"github.com/google/go-querystring/query"
 )
 
 const activationsAction = "getActiveActivations"
@@ -39,30 +41,54 @@ func (act *SMSActivate) GetActiveActivations() (ActivationList, error) {
 	}
 	val, err := query.Values(activationsReq)
 	if err != nil {
-		return ActivationList{}, err
+		return ActivationList{}, RequestError{
+			RequestName: activationsAction,
+			Err:         fmt.Errorf("%w: %w", ErrEncoding, err),
+		}
 	}
 	req.URL.RawQuery = val.Encode()
 
 	resp, err := act.httpClient.Do(req)
 	if err != nil {
-		return ActivationList{}, err
+		return ActivationList{}, RequestError{
+			RequestName: activationsAction,
+			Err:         fmt.Errorf("%w: %w", ErrWithReq, err),
+		}
 	}
 	defer resp.Body.Close()
 
-	body, _ := io.ReadAll(resp.Body)
+	body, err := io.ReadAll(resp.Body)
+	if err != nil {
+		return ActivationList{}, RequestError{
+			RequestName: activationsAction,
+			Err:         fmt.Errorf("%w: %w", ErrBodyRead, err),
+		}
+	}
 	switch string(body) {
 	case BadKey:
-		return ActivationList{}, ErrBadKey
+		return ActivationList{}, RequestError{
+			RequestName: activationsAction,
+			Err:         ErrBadKey,
+		}
 	case ErrorSQL:
-		return ActivationList{}, ErrSQL
+		return ActivationList{}, RequestError{
+			RequestName: activationsAction,
+			Err:         ErrSQL,
+		}
 	case NoActivations:
-		return ActivationList{}, ErrNoActivations
+		return ActivationList{}, RequestError{
+			RequestName: activationsAction,
+			Err:         ErrNoActivations,
+		}
 	}
 
 	var data ActivationList
 	err = json.Unmarshal(body, &data)
 	if err != nil {
-		return ActivationList{}, err
+		return ActivationList{}, RequestError{
+			RequestName: activationsAction,
+			Err:         fmt.Errorf("%w: %w", ErrUnmarshalling, err),
+		}
 	}
 	return data, nil
 }

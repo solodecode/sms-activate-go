@@ -2,9 +2,11 @@ package sms_activate_go
 
 import (
 	"encoding/json"
-	"github.com/google/go-querystring/query"
+	"fmt"
 	"io"
 	"net/http"
+
+	"github.com/google/go-querystring/query"
 )
 
 type (
@@ -32,8 +34,11 @@ const pricesAction = "getPrices"
 //		}
 //	}
 func (act *SMSActivate) GetPrices(service string, country int) (map[string]map[string]Info, error) {
-	if country < -1 || country > maxAvailableCountries {
-		return nil, BadCountryNum
+	if country < 0 || country > maxAvailableCountries {
+		return nil, RequestError{
+			RequestName: pricesAction,
+			Err:         BadCountryNum,
+		}
 	}
 
 	req, _ := http.NewRequest(http.MethodGet, act.BaseURL.String(), nil)
@@ -47,27 +52,50 @@ func (act *SMSActivate) GetPrices(service string, country int) (map[string]map[s
 
 	val, err := query.Values(pricesReq)
 	if err != nil {
-		return nil, err
+		return nil, RequestError{
+			RequestName: pricesAction,
+			Err:         fmt.Errorf("%w: %w", ErrEncoding, err),
+		}
 	}
 	req.URL.RawQuery = val.Encode()
 
 	resp, err := act.httpClient.Do(req)
 	if err != nil {
-		return nil, err
+		return nil, RequestError{
+			RequestName: pricesAction,
+			Err:         fmt.Errorf("%w: %w", ErrWithReq, err),
+		}
 	}
 	defer resp.Body.Close()
 
-	body, _ := io.ReadAll(resp.Body)
+	body, err := io.ReadAll(resp.Body)
+	if err != nil {
+		return nil, RequestError{
+			RequestName: pricesAction,
+			Err:         fmt.Errorf("%w: %w", ErrEncoding, err),
+		}
+	}
+
 	switch string(body) {
 	case BadKey:
-		return nil, ErrBadKey
+		return nil, RequestError{
+			RequestName: pricesAction,
+			Err:         ErrBadKey,
+		}
 	case ErrorSQL:
-		return nil, ErrSQL
+		return nil, RequestError{
+			RequestName: pricesAction,
+			Err:         ErrSQL,
+		}
 	}
+
 	var data map[string]map[string]Info
 	err = json.Unmarshal(body, &data)
 	if err != nil {
-		return nil, err
+		return nil, RequestError{
+			RequestName: pricesAction,
+			Err:         fmt.Errorf("%w: %w", ErrUnmarshalling, err),
+		}
 	}
 	return data, nil
 }

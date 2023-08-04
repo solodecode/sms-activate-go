@@ -2,9 +2,11 @@ package sms_activate_go
 
 import (
 	"encoding/json"
-	"github.com/google/go-querystring/query"
+	"fmt"
 	"io"
 	"net/http"
+
+	"github.com/google/go-querystring/query"
 )
 
 type (
@@ -45,28 +47,49 @@ func (act *SMSActivate) GetCountries() (Countries, error) {
 	}
 	val, err := query.Values(countriesReq)
 	if err != nil {
-		return nil, err
+		return nil, RequestError{
+			RequestName: countriesAction,
+			Err:         fmt.Errorf("%w: %w", ErrEncoding, err),
+		}
 	}
 	req.URL.RawQuery = val.Encode()
 
 	resp, err := act.httpClient.Do(req)
 	if err != nil {
-		return nil, err
+		return nil, RequestError{
+			RequestName: countriesAction,
+			Err:         fmt.Errorf("%w: %w", ErrWithReq, err),
+		}
 	}
 	defer resp.Body.Close()
 
-	body, _ := io.ReadAll(resp.Body)
+	body, err := io.ReadAll(resp.Body)
+	if err != nil {
+		return nil, RequestError{
+			RequestName: countriesAction,
+			Err:         fmt.Errorf("%w: %w", ErrBodyRead, err),
+		}
+	}
 	switch string(body) {
 	case BadKey:
-		return nil, ErrBadKey
+		return nil, RequestError{
+			RequestName: countriesAction,
+			Err:         ErrBadKey,
+		}
 	case ErrorSQL:
-		return nil, ErrSQL
+		return nil, RequestError{
+			RequestName: countriesAction,
+			Err:         ErrSQL,
+		}
 	}
 
 	var countries Countries
 	err = json.Unmarshal(body, &countries)
 	if err != nil {
-		return nil, err
+		return nil, RequestError{
+			RequestName: countriesAction,
+			Err:         fmt.Errorf("%w: %w", ErrUnmarshalling, err),
+		}
 	}
 	return countries, nil
 }

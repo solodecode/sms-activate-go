@@ -2,9 +2,11 @@ package sms_activate_go
 
 import (
 	"encoding/json"
-	"github.com/google/go-querystring/query"
+	"fmt"
 	"io"
 	"net/http"
+
+	"github.com/google/go-querystring/query"
 )
 
 const (
@@ -31,21 +33,36 @@ func (act *SMSActivate) GetTopCountries(service string) (TopCountriesList, error
 	}
 	val, err := query.Values(baseReq)
 	if err != nil {
-		return nil, err
+		return nil, RequestError{
+			RequestName: topCountriesAction,
+			Err:         fmt.Errorf("%w: %w", ErrEncoding, err),
+		}
 	}
 	req.URL.RawQuery = val.Encode()
 	resp, err := act.httpClient.Do(req)
 	if err != nil {
-		return nil, err
+		return nil, RequestError{
+			RequestName: topCountriesAction,
+			Err:         fmt.Errorf("%w: %w", ErrWithReq, err),
+		}
 	}
 	defer resp.Body.Close()
 
-	body, _ := io.ReadAll(resp.Body)
+	body, err := io.ReadAll(resp.Body)
+	if err != nil {
+		return nil, RequestError{
+			RequestName: topCountriesAction,
+			Err:         fmt.Errorf("%w: %w", ErrBodyRead, err),
+		}
+	}
 
 	data := make(TopCountriesList)
 	err = json.Unmarshal(body, &data)
 	if err != nil {
-		return nil, err
+		return nil, RequestError{
+			RequestName: topCountriesAction,
+			Err:         fmt.Errorf("%w: %w", ErrUnmarshalling, err),
+		}
 	}
 	return data, nil
 }

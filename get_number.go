@@ -2,12 +2,17 @@ package sms_activate_go
 
 import (
 	"encoding/json"
-	"github.com/google/go-querystring/query"
+	"fmt"
 	"io"
 	"net/http"
+
+	"github.com/google/go-querystring/query"
 )
 
-const getNumberAction = "getNumberV2"
+const (
+	getNumber       = "getNumber"
+	getNumberAction = "getNumberV2"
+)
 
 type (
 	GetNumberRequest struct {
@@ -36,32 +41,61 @@ func (act *SMSActivate) GetNumber(request GetNumberRequest) (Number, error) {
 
 	val, err := query.Values(request)
 	if err != nil {
-		return Number{}, err
+		return Number{}, RequestError{
+			RequestName: getNumber,
+			Err:         fmt.Errorf("%w: %w", ErrEncoding, err),
+		}
 	}
 	val.Add(apiKeyQuery, act.APIKey)
 	val.Add(actionQuery, getNumberAction)
 	req.URL.RawQuery = val.Encode()
 	resp, err := act.httpClient.Do(req)
 	if err != nil {
-		return Number{}, err
+		return Number{}, RequestError{
+			RequestName: getNumber,
+			Err:         fmt.Errorf("%w: %w", ErrWithReq, err),
+		}
 	}
 	defer resp.Body.Close()
 
-	body, _ := io.ReadAll(resp.Body)
+	body, err := io.ReadAll(resp.Body)
+	if err != nil {
+		return Number{}, RequestError{
+			RequestName: getNumber,
+			Err:         fmt.Errorf("%w: %w", ErrBodyRead, err),
+		}
+	}
+
 	switch string(body) {
 	case NoBalance:
-		return Number{}, ErrNoBalance
+		return Number{}, RequestError{
+			RequestName: getNumber,
+			Err:         ErrNoBalance,
+		}
 	case BadKey:
-		return Number{}, ErrBadKey
+		return Number{}, RequestError{
+			RequestName: getNumber,
+			Err:         ErrBadKey,
+		}
 	case ErrorSQL:
-		return Number{}, ErrSQL
+		return Number{}, RequestError{
+			RequestName: getNumber,
+			Err:         ErrSQL,
+		}
 	case NoNumbers:
-		return Number{}, ErrNoNumbers
+		return Number{}, RequestError{
+			RequestName: getNumber,
+			Err:         ErrNoNumbers,
+		}
 	}
+
 	var num Number
 	err = json.Unmarshal(body, &num)
 	if err != nil {
-		return Number{}, err
+		return Number{}, RequestError{
+			RequestName: getNumber,
+			Err:         fmt.Errorf("%w: %w", ErrUnmarshalling, err),
+		}
 	}
 	return num, nil
 }

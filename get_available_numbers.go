@@ -2,10 +2,12 @@ package sms_activate_go
 
 import (
 	"encoding/json"
-	"github.com/google/go-querystring/query"
+	"fmt"
 	"io"
 	"net/http"
 	"strings"
+
+	"github.com/google/go-querystring/query"
 )
 
 const (
@@ -17,7 +19,10 @@ const (
 
 func (act *SMSActivate) GetAvailableNumbers(country int, operator []string) (map[string]string, error) {
 	if country < 0 || country > maxAvailableCountries {
-		return nil, BadCountryNum
+		return nil, RequestError{
+			RequestName: numsStatusAction,
+			Err:         BadCountryNum,
+		}
 	}
 
 	req, _ := http.NewRequest(http.MethodGet, act.BaseURL.String(), nil)
@@ -29,8 +34,12 @@ func (act *SMSActivate) GetAvailableNumbers(country int, operator []string) (map
 	}
 	val, err := query.Values(numsReq)
 	if err != nil {
-		return nil, err
+		return nil, RequestError{
+			RequestName: numsStatusAction,
+			Err:         fmt.Errorf("%w: %w", ErrEncoding, err),
+		}
 	}
+
 	if country == RussiaID || country == UkraineID || country == KazakhstanID {
 		var operators string
 		operators = strings.Join(operator, ",")
@@ -40,21 +49,39 @@ func (act *SMSActivate) GetAvailableNumbers(country int, operator []string) (map
 
 	resp, err := act.httpClient.Do(req)
 	if err != nil {
-		return nil, err
+		return nil, RequestError{
+			RequestName: numsStatusAction,
+			Err:         fmt.Errorf("%w: %w", ErrWithReq, err),
+		}
 	}
 	defer resp.Body.Close()
 
-	body, _ := io.ReadAll(resp.Body)
+	body, err := io.ReadAll(resp.Body)
+	if err != nil {
+		return nil, RequestError{
+			RequestName: numsStatusAction,
+			Err:         fmt.Errorf("%w: %w", ErrBodyRead, err),
+		}
+	}
 	switch string(body) {
 	case BadKey:
-		return nil, ErrBadKey
+		return nil, RequestError{
+			RequestName: numsStatusAction,
+			Err:         ErrBadKey,
+		}
 	case ErrorSQL:
-		return nil, ErrSQL
+		return nil, RequestError{
+			RequestName: numsStatusAction,
+			Err:         ErrSQL,
+		}
 	}
 	data := make(map[string]string)
 	err = json.Unmarshal(body, &data)
 	if err != nil {
-		return nil, err
+		return nil, RequestError{
+			RequestName: numsStatusAction,
+			Err:         fmt.Errorf("%w: %w", ErrUnmarshalling, err),
+		}
 	}
 	return data, nil
 }
