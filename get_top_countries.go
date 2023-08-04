@@ -56,7 +56,7 @@ func (act *SMSActivate) GetTopCountries(service string) (TopCountriesList, error
 		}
 	}
 
-	data := make(TopCountriesList)
+	var data TopCountriesList
 	err = json.Unmarshal(body, &data)
 	if err != nil {
 		return nil, RequestError{

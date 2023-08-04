@@ -9,26 +9,31 @@ import (
 )
 
 const (
-	setStatusAction = "setStatus"
-	ReadyStatus     = 1
-	NewSMSStatus    = 3
-	FinishActStatus = 6
-	BadNumStatus    = 8
+	setStatusAction    = "setStatus"
+	ReadyStatus        = 1
+	NewSMSStatus       = 3
+	FinishActStatus    = 6
+	BadNumStatus       = 8
+	NumReadyStatusMsg  = "ACCESS_READY"
+	NewSMSStatusMsg    = "ACCESS_RETRY_GET"
+	SuccessStatusMsg   = "ACCESS_ACTIVATION"
+	CancelledStatusMsg = "ACCESS_CANCEL"
 )
 
-func (act *SMSActivate) SetStatus(id string, status int) (string, error) {
+func (act *SMSActivate) SetStatus(id string, status int) (bool, error) {
 	if len(id) == 0 {
-		return "", RequestError{
+		return false, RequestError{
 			RequestName: setStatusAction,
 			Err:         ErrBadLength,
 		}
 	}
-	if status != ReadyStatus || status != NewSMSStatus || status != FinishActStatus || status != BadNumStatus {
-		return "", RequestError{
+	if status != ReadyStatus && status != NewSMSStatus && status != FinishActStatus && status != BadNumStatus {
+		return false, RequestError{
 			RequestName: setStatusAction,
 			Err:         ErrWrongStatus,
 		}
 	}
+
 	req, _ := http.NewRequest(http.MethodGet, act.BaseURL.String(), nil)
 
 	setStatusReq := baseRequest{
@@ -40,7 +45,7 @@ func (act *SMSActivate) SetStatus(id string, status int) (string, error) {
 
 	val, err := query.Values(setStatusReq)
 	if err != nil {
-		return "", RequestError{
+		return false, RequestError{
 			RequestName: setStatusAction,
 			Err:         fmt.Errorf("%w: %w", ErrEncoding, err),
 		}
@@ -49,7 +54,7 @@ func (act *SMSActivate) SetStatus(id string, status int) (string, error) {
 
 	resp, err := act.httpClient.Do(req)
 	if err != nil {
-		return "", RequestError{
+		return false, RequestError{
 			RequestName: setStatusAction,
 			Err:         fmt.Errorf("%w: %w", ErrWithReq, err),
 		}
@@ -58,7 +63,7 @@ func (act *SMSActivate) SetStatus(id string, status int) (string, error) {
 
 	body, err := io.ReadAll(resp.Body)
 	if err != nil {
-		return "", RequestError{
+		return false, RequestError{
 			RequestName: setStatusAction,
 			Err:         fmt.Errorf("%w: %w", ErrBodyRead, err),
 		}
@@ -66,20 +71,32 @@ func (act *SMSActivate) SetStatus(id string, status int) (string, error) {
 
 	switch string(body) {
 	case BadKey:
-		return "", RequestError{
+		return false, RequestError{
 			RequestName: setStatusAction,
 			Err:         ErrBadKey,
 		}
 	case ErrorSQL:
-		return "", RequestError{
+		return false, RequestError{
 			RequestName: setStatusAction,
 			Err:         ErrSQL,
 		}
 	case WrongActivationID:
-		return "", RequestError{
+		return false, RequestError{
 			RequestName: setStatusAction,
 			Err:         ErrWrongActivationID,
 		}
+	case EarlyCancel:
+		return false, RequestError{
+			RequestName: setStatusAction,
+			Err:         ErrEarlyCancel,
+		}
+
+	case NumReadyStatusMsg, NewSMSStatusMsg, SuccessStatusMsg, CancelledStatusMsg:
+		return true, nil
+
 	}
-	return string(body), nil
+	return false, RequestError{
+		RequestName: setStatusAction,
+		Err:         fmt.Errorf("unknown response: %s", string(body)),
+	}
 }

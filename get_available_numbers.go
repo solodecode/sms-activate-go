@@ -75,7 +75,7 @@ func (act *SMSActivate) GetAvailableNumbers(country int, operator []string) (map
 			Err:         ErrSQL,
 		}
 	}
-	data := make(map[string]string)
+	var data map[string]string
 	err = json.Unmarshal(body, &data)
 	if err != nil {
 		return nil, RequestError{

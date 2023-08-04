@@ -13,6 +13,7 @@ const (
 	NoOperators       = `{"status":"error","error":"OPERATORS_NOT_FOUND"}`
 	NoActivations     = `{"status":"error","error":"NO_ACTIVATIONS"}`
 	WrongActivationID = "WRONG_ACTIVATION_ID"
+	EarlyCancel       = "EARLY_CANCEL_DENIED"
 )
 
 type RequestError struct {
@@ -40,4 +41,5 @@ var (
 	ErrNoActivations     = errors.New("have no active activations")
 	ErrWrongActivationID = errors.New("wrong activation id")
 	ErrWrongStatus       = errors.New("wrong status provided")
+	ErrEarlyCancel       = errors.New("cannot cancel the number within the first 2 minutes")
 )
