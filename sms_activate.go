@@ -33,28 +33,28 @@ type (
 		ActivationID string `url:"id,omitempty"`
 		Status       int    `url:"status,omitempty"`
 	}
-	Option func(*SMSActivate)
+	option func(*SMSActivate)
 )
 
-func WithNonDefURL(newURL *url.URL) Option {
+func WithNonDefURL(newURL *url.URL) option {
 	return func(act *SMSActivate) {
 		act.BaseURL = newURL
 	}
 }
 
-func WithRefCode(code string) Option {
+func WithRefCode(code string) option {
 	return func(act *SMSActivate) {
 		act.RefCode = code
 	}
 }
 
-func WithHTTPClient(client http.Client) Option {
+func WithHTTPClient(client http.Client) option {
 	return func(act *SMSActivate) {
 		act.httpClient = client
 	}
 }
 
-func New(apikey string, option ...Option) (*SMSActivate, error) {
+func New(apikey string, option ...option) (*SMSActivate, error) {
 	if len(apikey) != apiKeyLength {
 		return nil, ErrBadLengthKey
 	}
