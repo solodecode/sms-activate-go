@@ -16,10 +16,12 @@ const (
 	EarlyCancel       = "EARLY_CANCEL_DENIED"
 )
 
-type RequestError struct {
-	RequestName string
-	Err         error
-}
+type (
+	RequestError struct {
+		RequestName string
+		Err         error
+	}
+)
 
 func (r RequestError) Error() string {
 	return fmt.Sprintf("(%s):%v", r.RequestName, r.Err)

@@ -32,6 +32,17 @@ type (
 	}
 )
 
+// GetActiveActivations returns active activations on your account.
+//
+// Example
+//
+//	list, err := client.GetActiveActivations()
+//	if err != nil {
+//	    log.Fatal(err)
+//	}
+//	for _, act := range list.Activations {
+//	    fmt.Printf("Activation ID: %s, Phone number: %s\n", act.ActivationID, act.PhoneNumber)
+//	}
 func (act *SMSActivate) GetActiveActivations() (ActivationList, error) {
 	req, _ := http.NewRequest(http.MethodGet, act.BaseURL.String(), nil)
 

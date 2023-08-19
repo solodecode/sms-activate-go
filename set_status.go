@@ -20,6 +20,26 @@ const (
 	CancelledStatusMsg = "ACCESS_CANCEL"
 )
 
+// SetStatus sets the phone number activation status and returns true if the status is set.
+//
+// Example
+//
+//	num, err := client.GetNumber(SMSActivate.GetNumberRequest{
+//	    Service: "ig",
+//	    Country: "6",
+//	})
+//	if err != nil {
+//	    log.Fatal(err)
+//	}
+//
+//	sent, err := client.SetStatus(num.ActivationID, SMSActivate.BadNumStatus)
+//	if err != nil {
+//	    log.Fatal(err)
+//	}
+//
+//	if sent {
+//	    // ...
+//	}
 func (act *SMSActivate) SetStatus(id string, status int) (bool, error) {
 	if len(id) == 0 {
 		return false, RequestError{

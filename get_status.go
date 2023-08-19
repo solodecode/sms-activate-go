@@ -10,6 +10,21 @@ import (
 
 const getStatusAction = "getStatus"
 
+// GetStatus returns status of your activation.
+//
+// Example
+//
+//	data, err := client.GetActiveActivations()
+//	if err != nil {
+//	    log.Fatal(err)
+//	}
+//
+//	status, err := client.GetStatus(data.Activations[0].ActivationID)
+//	if err != nil {
+//	    log.Fatal(err)
+//	}
+//
+// fmt.Println(status)
 func (act *SMSActivate) GetStatus(actID string) (string, error) {
 	if len(actID) == 0 {
 		return "", RequestError{

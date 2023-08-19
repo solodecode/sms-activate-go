@@ -10,7 +10,6 @@ import (
 )
 
 const (
-	getNumber       = "getNumber"
 	getNumberAction = "getNumberV2"
 )
 
@@ -36,13 +35,25 @@ type (
 	}
 )
 
+// GetNumber rents a phone number and returns info about it.
+//
+// Example
+//
+//	num, err := client.GetNumber(SMSActivate.GetNumberRequest{
+//	    Service: "ig",
+//	    Country: "6",
+//	})
+//	if err != nil {
+//	    log.Fatal(err)
+//	}
+//	fmt.Println(num.PhoneNumber)
 func (act *SMSActivate) GetNumber(request GetNumberRequest) (Number, error) {
 	req, _ := http.NewRequest(http.MethodGet, act.BaseURL.String(), nil)
 
 	val, err := query.Values(request)
 	if err != nil {
 		return Number{}, RequestError{
-			RequestName: getNumber,
+			RequestName: getNumberAction,
 			Err:         fmt.Errorf("%w: %w", ErrEncoding, err),
 		}
 	}
@@ -52,7 +63,7 @@ func (act *SMSActivate) GetNumber(request GetNumberRequest) (Number, error) {
 	resp, err := act.httpClient.Do(req)
 	if err != nil {
 		return Number{}, RequestError{
-			RequestName: getNumber,
+			RequestName: getNumberAction,
 			Err:         fmt.Errorf("%w: %w", ErrWithReq, err),
 		}
 	}
@@ -61,7 +72,7 @@ func (act *SMSActivate) GetNumber(request GetNumberRequest) (Number, error) {
 	body, err := io.ReadAll(resp.Body)
 	if err != nil {
 		return Number{}, RequestError{
-			RequestName: getNumber,
+			RequestName: getNumberAction,
 			Err:         fmt.Errorf("%w: %w", ErrBodyRead, err),
 		}
 	}
@@ -69,22 +80,22 @@ func (act *SMSActivate) GetNumber(request GetNumberRequest) (Number, error) {
 	switch string(body) {
 	case NoBalance:
 		return Number{}, RequestError{
-			RequestName: getNumber,
+			RequestName: getNumberAction,
 			Err:         ErrNoBalance,
 		}
 	case BadKey:
 		return Number{}, RequestError{
-			RequestName: getNumber,
+			RequestName: getNumberAction,
 			Err:         ErrBadKey,
 		}
 	case ErrorSQL:
 		return Number{}, RequestError{
-			RequestName: getNumber,
+			RequestName: getNumberAction,
 			Err:         ErrSQL,
 		}
 	case NoNumbers:
 		return Number{}, RequestError{
-			RequestName: getNumber,
+			RequestName: getNumberAction,
 			Err:         ErrNoNumbers,
 		}
 	}
@@ -93,7 +104,7 @@ func (act *SMSActivate) GetNumber(request GetNumberRequest) (Number, error) {
 	err = json.Unmarshal(body, &num)
 	if err != nil {
 		return Number{}, RequestError{
-			RequestName: getNumber,
+			RequestName: getNumberAction,
 			Err:         fmt.Errorf("%w: %w", ErrUnmarshalling, err),
 		}
 	}

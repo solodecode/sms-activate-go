@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"io"
 	"net/http"
+	"strconv"
 
 	"github.com/google/go-querystring/query"
 )
@@ -47,7 +48,6 @@ func (act *SMSActivate) GetPrices(service string, country int) (map[string]map[s
 		APIKey:  act.APIKey,
 		Action:  pricesAction,
 		Service: service,
-		Country: country,
 	}
 
 	val, err := query.Values(pricesReq)
@@ -56,6 +56,9 @@ func (act *SMSActivate) GetPrices(service string, country int) (map[string]map[s
 			RequestName: pricesAction,
 			Err:         fmt.Errorf("%w: %w", ErrEncoding, err),
 		}
+	}
+	if country > allCountries {
+		val.Add(countryQuery, strconv.Itoa(country))
 	}
 	req.URL.RawQuery = val.Encode()
 
