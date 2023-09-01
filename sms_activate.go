@@ -49,9 +49,9 @@ func WithRefCode(code string) option {
 	}
 }
 
-func WithHTTPClient(client http.Client) option {
+func WithHTTPClient(client *http.Client) option {
 	return func(act *SMSActivate) {
-		act.httpClient = client
+		act.httpClient = *client
 	}
 }
 
