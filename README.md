@@ -52,5 +52,5 @@ func main() {
 	}
 	fmt.Printf("Balance: %f\n", balance)
 ```
-### WARNING
+### 🔴 WARNING
 Unfortunately, the server of the sms-activate service is very kind and always responds with 200 OK, so the returned responses may be unhandled errors.
