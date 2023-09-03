@@ -31,6 +31,7 @@ type (
 		APIKey       string `url:"api_key"`
 		Action       string `url:"action"`
 		Service      string `url:"service,omitempty"`
+		FreePrice    bool   `url:"freePrice,omitempty"`
 		ActivationID string `url:"id,omitempty"`
 		Status       int    `url:"status,omitempty"`
 	}
