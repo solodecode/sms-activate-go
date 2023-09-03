@@ -2,7 +2,6 @@ package sms_activate_go
 
 import (
 	"encoding/json"
-	"fmt"
 	"io"
 	"net/http"
 	"strconv"
@@ -29,10 +28,7 @@ const operatorsAction = "getOperators"
 //	}
 func (act *SMSActivate) GetOperators(country int) (CountryOperators, error) {
 	if country < allCountries || country > maxAvailableCountries {
-		return CountryOperators{}, RequestError{
-			RequestName: operatorsAction,
-			Err:         BadCountryNum,
-		}
+		return CountryOperators{}, BadCountryNum
 	}
 
 	req, _ := http.NewRequest(http.MethodGet, act.BaseURL.String(), nil)
@@ -43,10 +39,7 @@ func (act *SMSActivate) GetOperators(country int) (CountryOperators, error) {
 	}
 	val, err := query.Values(operatorsReq)
 	if err != nil {
-		return CountryOperators{}, RequestError{
-			RequestName: operatorsAction,
-			Err:         fmt.Errorf("%w: %w", ErrEncoding, err),
-		}
+		return CountryOperators{}, err
 	}
 	if country > allCountries {
 		val.Add(countryQuery, strconv.Itoa(country))
@@ -55,46 +48,29 @@ func (act *SMSActivate) GetOperators(country int) (CountryOperators, error) {
 
 	resp, err := act.httpClient.Do(req)
 	if err != nil {
-		return CountryOperators{}, RequestError{
-			RequestName: operatorsAction,
-			Err:         fmt.Errorf("%w: %w", ErrWithReq, err),
-		}
+		return CountryOperators{}, err
 	}
 	defer resp.Body.Close()
 
 	body, err := io.ReadAll(resp.Body)
 	if err != nil {
-		return CountryOperators{}, RequestError{
-			RequestName: operatorsAction,
-			Err:         fmt.Errorf("%w: %w", ErrBodyRead, err),
-		}
+		return CountryOperators{}, err
 	}
 
 	switch string(body) {
-	case BadKey:
-		return CountryOperators{}, RequestError{
-			RequestName: operatorsAction,
-			Err:         ErrBadKey,
-		}
-	case ErrorSQL:
-		return CountryOperators{}, RequestError{
-			RequestName: operatorsAction,
-			Err:         ErrSQL,
-		}
-	case NoOperators:
-		return CountryOperators{}, RequestError{
-			RequestName: operatorsAction,
-			Err:         ErrNoOperators,
-		}
+	case badKeyMsg:
+		return CountryOperators{}, ErrBadKey
+	case errorSQLMsg:
+		return CountryOperators{}, ErrSQL
+	case noOperatorsMsg:
+		return CountryOperators{}, ErrNoOperators
 	}
 
 	var data CountryOperators
+
 	err = json.Unmarshal(body, &data)
 	if err != nil {
-		return CountryOperators{}, RequestError{
-			RequestName: operatorsAction,
-			Err:         fmt.Errorf("%w: %w", ErrUnmarshalling, err),
-		}
+		return CountryOperators{}, err
 	}
 	return data, nil
 }

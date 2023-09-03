@@ -25,7 +25,7 @@ type (
 		APIKey     string
 		BaseURL    *url.URL
 		RefCode    string
-		httpClient http.Client
+		httpClient *http.Client
 	}
 	baseRequest struct {
 		APIKey       string `url:"api_key"`
@@ -51,7 +51,7 @@ func WithRefCode(code string) option {
 
 func WithHTTPClient(client *http.Client) option {
 	return func(act *SMSActivate) {
-		act.httpClient = *client
+		act.httpClient = client
 	}
 }
 
@@ -63,7 +63,7 @@ func New(apikey string, option ...option) (*SMSActivate, error) {
 	act := &SMSActivate{
 		APIKey:     apikey,
 		BaseURL:    baseURL,
-		httpClient: http.Client{},
+		httpClient: http.DefaultClient,
 		RefCode:    refCode,
 	}
 	for _, opt := range option {

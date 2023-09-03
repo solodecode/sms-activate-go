@@ -2,7 +2,6 @@ package sms_activate_go
 
 import (
 	"encoding/json"
-	"fmt"
 	"io"
 	"net/http"
 
@@ -15,6 +14,7 @@ const (
 
 type (
 	TopCountriesList map[string]TopCountriesInfo
+
 	TopCountriesInfo struct {
 		CountryID   int     `json:"country"`
 		Count       int     `json:"count"`
@@ -44,38 +44,26 @@ func (act *SMSActivate) GetTopCountries(service string) (TopCountriesList, error
 	}
 	val, err := query.Values(baseReq)
 	if err != nil {
-		return nil, RequestError{
-			RequestName: topCountriesAction,
-			Err:         fmt.Errorf("%w: %w", ErrEncoding, err),
-		}
+		return nil, err
 	}
 	req.URL.RawQuery = val.Encode()
+
 	resp, err := act.httpClient.Do(req)
 	if err != nil {
-		return nil, RequestError{
-			RequestName: topCountriesAction,
-			Err:         fmt.Errorf("%w: %w", ErrWithReq, err),
-		}
+		return nil, err
 	}
 	defer resp.Body.Close()
 
 	body, err := io.ReadAll(resp.Body)
 	if err != nil {
-		return nil, RequestError{
-			RequestName: topCountriesAction,
-			Err:         fmt.Errorf("%w: %w", ErrBodyRead, err),
-		}
+		return nil, err
 	}
 
-	fmt.Println(string(body))
-
 	var data TopCountriesList
+
 	err = json.Unmarshal(body, &data)
 	if err != nil {
-		return nil, RequestError{
-			RequestName: topCountriesAction,
-			Err:         fmt.Errorf("%w: %w", ErrUnmarshalling, err),
-		}
+		return nil, err
 	}
 	return data, nil
 }

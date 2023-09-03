@@ -2,7 +2,6 @@ package sms_activate_go
 
 import (
 	"encoding/json"
-	"fmt"
 	"io"
 	"net/http"
 
@@ -13,14 +12,29 @@ type (
 	Countries map[string]CountryInfo
 
 	CountryInfo struct {
-		ID           int    `json:"id"`           // country id
-		RusName      string `json:"rus"`          // country name in Russian
-		EngName      string `json:"eng"`          // country name in English
-		ChnName      string `json:"chn"`          // country name in Chinese
-		Visible      int    `json:"visible"`      // 0 - is not displayed on the site, 1 - is displayed
-		Retry        int    `json:"retry"`        // 0 - repeated SMS is not available, 1 - is available
-		Rent         int    `json:"rent"`         // 0 - country is not leased, 1 - is leased;
-		MultiService int    `json:"multiService"` // 0 - country is not available for multiservice, 1- available
+		// country id
+		ID int `json:"id"`
+
+		// country name in Russian
+		RusName string `json:"rus"`
+
+		// country name in English
+		EngName string `json:"eng"`
+
+		// country name in Chinese
+		ChnName string `json:"chn"`
+
+		// 0 - is not displayed on the site, 1 - is displayed
+		Visible int `json:"visible"`
+
+		// 0 - repeated SMS is not available, 1 - is available
+		Retry int `json:"retry"`
+
+		// 0 - country is not leased, 1 - is leased;
+		Rent int `json:"rent"`
+
+		// 0 - country is not available for multiservice, 1- available
+		MultiService int `json:"multiService"`
 	}
 )
 
@@ -47,49 +61,32 @@ func (act *SMSActivate) GetCountries() (Countries, error) {
 	}
 	val, err := query.Values(countriesReq)
 	if err != nil {
-		return nil, RequestError{
-			RequestName: countriesAction,
-			Err:         fmt.Errorf("%w: %w", ErrEncoding, err),
-		}
+		return nil, err
 	}
 	req.URL.RawQuery = val.Encode()
 
 	resp, err := act.httpClient.Do(req)
 	if err != nil {
-		return nil, RequestError{
-			RequestName: countriesAction,
-			Err:         fmt.Errorf("%w: %w", ErrWithReq, err),
-		}
+		return nil, err
 	}
 	defer resp.Body.Close()
 
 	body, err := io.ReadAll(resp.Body)
 	if err != nil {
-		return nil, RequestError{
-			RequestName: countriesAction,
-			Err:         fmt.Errorf("%w: %w", ErrBodyRead, err),
-		}
+		return nil, err
 	}
 	switch string(body) {
-	case BadKey:
-		return nil, RequestError{
-			RequestName: countriesAction,
-			Err:         ErrBadKey,
-		}
-	case ErrorSQL:
-		return nil, RequestError{
-			RequestName: countriesAction,
-			Err:         ErrSQL,
-		}
+	case badKeyMsg:
+		return nil, ErrBadKey
+	case errorSQLMsg:
+		return nil, ErrSQL
 	}
 
 	var countries Countries
+
 	err = json.Unmarshal(body, &countries)
 	if err != nil {
-		return nil, RequestError{
-			RequestName: countriesAction,
-			Err:         fmt.Errorf("%w: %w", ErrUnmarshalling, err),
-		}
+		return nil, err
 	}
 	return countries, nil
 }

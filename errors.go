@@ -2,38 +2,23 @@ package sms_activate_go
 
 import (
 	"errors"
-	"fmt"
 )
 
 const (
-	BadKey            = "BAD_KEY"
-	ErrorSQL          = "ERROR_SQL"
-	NoNumbers         = "NO_NUMBERS"
-	NoBalance         = "NO_BALANCE"
-	NoOperators       = `{"status":"error","error":"OPERATORS_NOT_FOUND"}`
-	NoActivations     = `{"status":"error","error":"NO_ACTIVATIONS"}`
-	WrongActivationID = "WRONG_ACTIVATION_ID"
-	EarlyCancel       = "EARLY_CANCEL_DENIED"
+	badKeyMsg            = "BAD_KEY"
+	errorSQLMsg          = "ERROR_SQL"
+	noNumbersMsg         = "NO_NUMBERS"
+	noBalanceMsg         = "NO_BALANCE"
+	noOperatorsMsg       = `{"status":"error","error":"OPERATORS_NOT_FOUND"}`
+	noActivationsMsg     = `{"status":"error","error":"NO_ACTIVATIONS"}`
+	wrongActivationIDMsg = "WRONG_ACTIVATION_ID"
+	earlyCancelMsg       = "EARLY_CANCEL_DENIED"
 )
-
-type (
-	RequestError struct {
-		RequestName string
-		Err         error
-	}
-)
-
-func (r RequestError) Error() string {
-	return fmt.Sprintf("(%s):%v", r.RequestName, r.Err)
-}
 
 var (
-	ErrEncoding          = errors.New("error while encoding query")
-	ErrWithReq           = errors.New("error with doing request")
-	ErrBodyRead          = errors.New("error while reading body")
-	ErrUnmarshalling     = errors.New("error while unmarshalling body")
 	ErrBadLength         = errors.New("one or more params have wrong length")
 	ErrBadLengthKey      = errors.New("bad length key")
+	ErrUnknownResp       = errors.New("unknown response")
 	ErrBadKey            = errors.New("invalid API access key")
 	BadCountryNum        = errors.New("the country number must be at least -1 and no more than 196")
 	ErrSQL               = errors.New("one of the params has an invalid value")

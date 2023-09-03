@@ -2,7 +2,6 @@ package sms_activate_go
 
 import (
 	"encoding/json"
-	"fmt"
 	"io"
 	"net/http"
 
@@ -52,54 +51,34 @@ func (act *SMSActivate) GetActiveActivations() (ActivationList, error) {
 	}
 	val, err := query.Values(activationsReq)
 	if err != nil {
-		return ActivationList{}, RequestError{
-			RequestName: activationsAction,
-			Err:         fmt.Errorf("%w: %w", ErrEncoding, err),
-		}
+		return ActivationList{}, err
 	}
 	req.URL.RawQuery = val.Encode()
 
 	resp, err := act.httpClient.Do(req)
 	if err != nil {
-		return ActivationList{}, RequestError{
-			RequestName: activationsAction,
-			Err:         fmt.Errorf("%w: %w", ErrWithReq, err),
-		}
+		return ActivationList{}, err
 	}
 	defer resp.Body.Close()
 
 	body, err := io.ReadAll(resp.Body)
 	if err != nil {
-		return ActivationList{}, RequestError{
-			RequestName: activationsAction,
-			Err:         fmt.Errorf("%w: %w", ErrBodyRead, err),
-		}
+		return ActivationList{}, err
 	}
 	switch string(body) {
-	case BadKey:
-		return ActivationList{}, RequestError{
-			RequestName: activationsAction,
-			Err:         ErrBadKey,
-		}
-	case ErrorSQL:
-		return ActivationList{}, RequestError{
-			RequestName: activationsAction,
-			Err:         ErrSQL,
-		}
-	case NoActivations:
-		return ActivationList{}, RequestError{
-			RequestName: activationsAction,
-			Err:         ErrNoActivations,
-		}
+	case badKeyMsg:
+		return ActivationList{}, ErrBadKey
+	case errorSQLMsg:
+		return ActivationList{}, ErrSQL
+	case noActivationsMsg:
+		return ActivationList{}, ErrNoActivations
 	}
 
 	var data ActivationList
+
 	err = json.Unmarshal(body, &data)
 	if err != nil {
-		return ActivationList{}, RequestError{
-			RequestName: activationsAction,
-			Err:         fmt.Errorf("%w: %w", ErrUnmarshalling, err),
-		}
+		return ActivationList{}, err
 	}
 	return data, nil
 }

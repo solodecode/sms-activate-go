@@ -2,7 +2,6 @@ package sms_activate_go
 
 import (
 	"encoding/json"
-	"fmt"
 	"io"
 	"net/http"
 	"strconv"
@@ -13,9 +12,9 @@ import (
 
 const (
 	numsStatusAction = "getNumbersStatus"
-	RussiaID         = 0
-	UkraineID        = 1
-	KazakhstanID     = 2
+	russiaID         = 0
+	ukraineID        = 1
+	kazakhstanID     = 2
 )
 
 // GetAvailableNumbers returns available phone numbers to rent by country.
@@ -32,10 +31,7 @@ const (
 //	}
 func (act *SMSActivate) GetAvailableNumbers(country int, operator ...string) (map[string]string, error) {
 	if country < allCountries || country > maxAvailableCountries {
-		return nil, RequestError{
-			RequestName: numsStatusAction,
-			Err:         BadCountryNum,
-		}
+		return nil, BadCountryNum
 	}
 
 	req, _ := http.NewRequest(http.MethodGet, act.BaseURL.String(), nil)
@@ -46,16 +42,13 @@ func (act *SMSActivate) GetAvailableNumbers(country int, operator ...string) (ma
 	}
 	val, err := query.Values(numsReq)
 	if err != nil {
-		return nil, RequestError{
-			RequestName: numsStatusAction,
-			Err:         fmt.Errorf("%w: %w", ErrEncoding, err),
-		}
+		return nil, err
 	}
 	if country > allCountries {
 		val.Add(countryQuery, strconv.Itoa(country))
 	}
 
-	if country == RussiaID || country == UkraineID || country == KazakhstanID {
+	if country == russiaID || country == ukraineID || country == kazakhstanID {
 		var operators string
 		operators = strings.Join(operator, ",")
 		val.Add(operatorQuery, operators)
@@ -64,39 +57,26 @@ func (act *SMSActivate) GetAvailableNumbers(country int, operator ...string) (ma
 
 	resp, err := act.httpClient.Do(req)
 	if err != nil {
-		return nil, RequestError{
-			RequestName: numsStatusAction,
-			Err:         fmt.Errorf("%w: %w", ErrWithReq, err),
-		}
+		return nil, err
 	}
 	defer resp.Body.Close()
 
 	body, err := io.ReadAll(resp.Body)
 	if err != nil {
-		return nil, RequestError{
-			RequestName: numsStatusAction,
-			Err:         fmt.Errorf("%w: %w", ErrBodyRead, err),
-		}
+		return nil, err
 	}
 	switch string(body) {
-	case BadKey:
-		return nil, RequestError{
-			RequestName: numsStatusAction,
-			Err:         ErrBadKey,
-		}
-	case ErrorSQL:
-		return nil, RequestError{
-			RequestName: numsStatusAction,
-			Err:         ErrSQL,
-		}
+	case badKeyMsg:
+		return nil, ErrBadKey
+	case errorSQLMsg:
+		return nil, ErrSQL
 	}
+
 	var data map[string]string
+
 	err = json.Unmarshal(body, &data)
 	if err != nil {
-		return nil, RequestError{
-			RequestName: numsStatusAction,
-			Err:         fmt.Errorf("%w: %w", ErrUnmarshalling, err),
-		}
+		return nil, err
 	}
 	return data, nil
 }

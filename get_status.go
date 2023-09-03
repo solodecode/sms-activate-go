@@ -1,7 +1,6 @@
 package sms_activate_go
 
 import (
-	"fmt"
 	"io"
 	"net/http"
 
@@ -27,10 +26,7 @@ const getStatusAction = "getStatus"
 // fmt.Println(status)
 func (act *SMSActivate) GetStatus(actID string) (string, error) {
 	if len(actID) == 0 {
-		return "", RequestError{
-			RequestName: getStatusAction,
-			Err:         ErrBadLength,
-		}
+		return "", ErrBadLength
 	}
 	req, _ := http.NewRequest(http.MethodGet, act.BaseURL.String(), nil)
 
@@ -41,45 +37,28 @@ func (act *SMSActivate) GetStatus(actID string) (string, error) {
 	}
 	val, err := query.Values(statusReq)
 	if err != nil {
-		return "", RequestError{
-			RequestName: getStatusAction,
-			Err:         fmt.Errorf("%w:%w", ErrEncoding, err),
-		}
+		return "", err
 	}
 	req.URL.RawQuery = val.Encode()
 
 	resp, err := act.httpClient.Do(req)
 	if err != nil {
-		return "", RequestError{
-			RequestName: getStatusAction,
-			Err:         fmt.Errorf("%w:%w", ErrWithReq, err),
-		}
+		return "", err
 	}
 	defer resp.Body.Close()
 
 	body, err := io.ReadAll(resp.Body)
 	if err != nil {
-		return "", RequestError{
-			RequestName: getStatusAction,
-			Err:         fmt.Errorf("%w:%w", ErrBodyRead, err),
-		}
+		return "", err
 	}
+
 	switch string(body) {
-	case BadKey:
-		return "", RequestError{
-			RequestName: getStatusAction,
-			Err:         ErrBadKey,
-		}
-	case ErrorSQL:
-		return "", RequestError{
-			RequestName: getStatusAction,
-			Err:         ErrSQL,
-		}
-	case WrongActivationID:
-		return "", RequestError{
-			RequestName: getStatusAction,
-			Err:         ErrWrongActivationID,
-		}
+	case badKeyMsg:
+		return "", ErrBadKey
+	case errorSQLMsg:
+		return "", ErrSQL
+	case wrongActivationIDMsg:
+		return "", ErrWrongActivationID
 	}
 	return string(body), nil
 }

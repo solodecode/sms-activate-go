@@ -11,7 +11,7 @@ import (
 )
 
 const (
-	BalancePref   = "ACCESS_BALANCE:"
+	balancePref   = "ACCESS_BALANCE:"
 	balanceAction = "getBalance"
 )
 
@@ -33,50 +33,32 @@ func (act *SMSActivate) GetBalance() (float64, error) {
 	}
 	val, err := query.Values(balanceReq)
 	if err != nil {
-		return 0, RequestError{
-			RequestName: balanceAction,
-			Err:         fmt.Errorf("%w: %w", ErrEncoding, err),
-		}
+		return 0, err
 	}
 	req.URL.RawQuery = val.Encode()
 
 	resp, err := act.httpClient.Do(req)
 	if err != nil {
-		return 0, RequestError{
-			RequestName: balanceAction,
-			Err:         fmt.Errorf("%w: %w", ErrWithReq, err),
-		}
+		return 0, err
 	}
 	defer resp.Body.Close()
 
 	body, err := io.ReadAll(resp.Body)
 	if err != nil {
-		return 0, RequestError{
-			RequestName: balanceAction,
-			Err:         fmt.Errorf("%w: %w", ErrBodyRead, err),
-		}
+		return 0, err
 	}
 
 	data := string(body)
 
 	switch {
-	case strings.HasPrefix(data, BalancePref):
-		balance := strings.TrimPrefix(data, BalancePref)
+	case strings.HasPrefix(data, balancePref):
+		balance := strings.TrimPrefix(data, balancePref)
 		return strconv.ParseFloat(balance, 64)
-	case data == BadKey:
-		return 0, RequestError{
-			RequestName: balanceAction,
-			Err:         ErrBadKey,
-		}
-	case data == ErrorSQL:
-		return 0, RequestError{
-			RequestName: balanceAction,
-			Err:         ErrSQL,
-		}
+	case data == badKeyMsg:
+		return 0, ErrBadKey
+	case data == errorSQLMsg:
+		return 0, ErrSQL
 	}
 
-	return 0, RequestError{
-		RequestName: balanceAction,
-		Err:         fmt.Errorf("unknown response: %s", data),
-	}
+	return 0, fmt.Errorf("%w: %s", ErrUnknownResp, data)
 }

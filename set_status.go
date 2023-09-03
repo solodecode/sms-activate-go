@@ -42,16 +42,10 @@ const (
 //	}
 func (act *SMSActivate) SetStatus(id string, status int) (bool, error) {
 	if len(id) == 0 {
-		return false, RequestError{
-			RequestName: setStatusAction,
-			Err:         ErrBadLength,
-		}
+		return false, ErrBadLength
 	}
 	if status != ReadyStatus && status != NewSMSStatus && status != FinishActStatus && status != BadNumStatus {
-		return false, RequestError{
-			RequestName: setStatusAction,
-			Err:         ErrWrongStatus,
-		}
+		return false, ErrWrongStatus
 	}
 
 	req, _ := http.NewRequest(http.MethodGet, act.BaseURL.String(), nil)
@@ -65,58 +59,35 @@ func (act *SMSActivate) SetStatus(id string, status int) (bool, error) {
 
 	val, err := query.Values(setStatusReq)
 	if err != nil {
-		return false, RequestError{
-			RequestName: setStatusAction,
-			Err:         fmt.Errorf("%w: %w", ErrEncoding, err),
-		}
+		return false, err
 	}
 	req.URL.RawQuery = val.Encode()
 
 	resp, err := act.httpClient.Do(req)
 	if err != nil {
-		return false, RequestError{
-			RequestName: setStatusAction,
-			Err:         fmt.Errorf("%w: %w", ErrWithReq, err),
-		}
+		return false, err
 	}
 	defer resp.Body.Close()
 
 	body, err := io.ReadAll(resp.Body)
 	if err != nil {
-		return false, RequestError{
-			RequestName: setStatusAction,
-			Err:         fmt.Errorf("%w: %w", ErrBodyRead, err),
-		}
+		return false, err
 	}
 
-	switch string(body) {
-	case BadKey:
-		return false, RequestError{
-			RequestName: setStatusAction,
-			Err:         ErrBadKey,
-		}
-	case ErrorSQL:
-		return false, RequestError{
-			RequestName: setStatusAction,
-			Err:         ErrSQL,
-		}
-	case WrongActivationID:
-		return false, RequestError{
-			RequestName: setStatusAction,
-			Err:         ErrWrongActivationID,
-		}
-	case EarlyCancel:
-		return false, RequestError{
-			RequestName: setStatusAction,
-			Err:         ErrEarlyCancel,
-		}
+	data := string(body)
 
+	switch data {
+	case badKeyMsg:
+		return false, ErrBadKey
+	case errorSQLMsg:
+		return false, ErrSQL
+	case wrongActivationIDMsg:
+		return false, ErrWrongActivationID
+	case earlyCancelMsg:
+		return false, ErrEarlyCancel
 	case NumReadyStatusMsg, NewSMSStatusMsg, SuccessStatusMsg, CancelledStatusMsg:
 		return true, nil
 
 	}
-	return false, RequestError{
-		RequestName: setStatusAction,
-		Err:         fmt.Errorf("unknown response: %s", string(body)),
-	}
+	return false, fmt.Errorf("%w: %s", ErrUnknownResp, data)
 }

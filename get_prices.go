@@ -2,7 +2,6 @@ package sms_activate_go
 
 import (
 	"encoding/json"
-	"fmt"
 	"io"
 	"net/http"
 	"strconv"
@@ -12,8 +11,11 @@ import (
 
 type (
 	Info struct {
-		Cost  float64 `json:"cost"`  // cost per number of service
-		Count int     `json:"count"` // count numbers available for this service
+		// cost per number of service
+		Cost float64 `json:"cost"`
+
+		// count numbers available for this service
+		Count int `json:"count"`
 	}
 )
 
@@ -36,10 +38,7 @@ const pricesAction = "getPrices"
 //	}
 func (act *SMSActivate) GetPrices(service string, country int) (map[string]map[string]Info, error) {
 	if country < 0 || country > maxAvailableCountries {
-		return nil, RequestError{
-			RequestName: pricesAction,
-			Err:         BadCountryNum,
-		}
+		return nil, BadCountryNum
 	}
 
 	req, _ := http.NewRequest(http.MethodGet, act.BaseURL.String(), nil)
@@ -52,10 +51,7 @@ func (act *SMSActivate) GetPrices(service string, country int) (map[string]map[s
 
 	val, err := query.Values(pricesReq)
 	if err != nil {
-		return nil, RequestError{
-			RequestName: pricesAction,
-			Err:         fmt.Errorf("%w: %w", ErrEncoding, err),
-		}
+		return nil, err
 	}
 	if country > allCountries {
 		val.Add(countryQuery, strconv.Itoa(country))
@@ -64,41 +60,27 @@ func (act *SMSActivate) GetPrices(service string, country int) (map[string]map[s
 
 	resp, err := act.httpClient.Do(req)
 	if err != nil {
-		return nil, RequestError{
-			RequestName: pricesAction,
-			Err:         fmt.Errorf("%w: %w", ErrWithReq, err),
-		}
+		return nil, err
 	}
 	defer resp.Body.Close()
 
 	body, err := io.ReadAll(resp.Body)
 	if err != nil {
-		return nil, RequestError{
-			RequestName: pricesAction,
-			Err:         fmt.Errorf("%w: %w", ErrEncoding, err),
-		}
+		return nil, err
 	}
 
 	switch string(body) {
-	case BadKey:
-		return nil, RequestError{
-			RequestName: pricesAction,
-			Err:         ErrBadKey,
-		}
-	case ErrorSQL:
-		return nil, RequestError{
-			RequestName: pricesAction,
-			Err:         ErrSQL,
-		}
+	case badKeyMsg:
+		return nil, ErrBadKey
+	case errorSQLMsg:
+		return nil, ErrSQL
 	}
 
 	var data map[string]map[string]Info
+
 	err = json.Unmarshal(body, &data)
 	if err != nil {
-		return nil, RequestError{
-			RequestName: pricesAction,
-			Err:         fmt.Errorf("%w: %w", ErrUnmarshalling, err),
-		}
+		return nil, err
 	}
 	return data, nil
 }

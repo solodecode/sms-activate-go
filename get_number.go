@@ -2,7 +2,6 @@ package sms_activate_go
 
 import (
 	"encoding/json"
-	"fmt"
 	"io"
 	"net/http"
 
@@ -52,61 +51,38 @@ func (act *SMSActivate) GetNumber(request GetNumberRequest) (Number, error) {
 
 	val, err := query.Values(request)
 	if err != nil {
-		return Number{}, RequestError{
-			RequestName: getNumberAction,
-			Err:         fmt.Errorf("%w: %w", ErrEncoding, err),
-		}
+		return Number{}, err
 	}
 	val.Add(apiKeyQuery, act.APIKey)
 	val.Add(actionQuery, getNumberAction)
 	req.URL.RawQuery = val.Encode()
 	resp, err := act.httpClient.Do(req)
 	if err != nil {
-		return Number{}, RequestError{
-			RequestName: getNumberAction,
-			Err:         fmt.Errorf("%w: %w", ErrWithReq, err),
-		}
+		return Number{}, err
 	}
 	defer resp.Body.Close()
 
 	body, err := io.ReadAll(resp.Body)
 	if err != nil {
-		return Number{}, RequestError{
-			RequestName: getNumberAction,
-			Err:         fmt.Errorf("%w: %w", ErrBodyRead, err),
-		}
+		return Number{}, err
 	}
 
 	switch string(body) {
-	case NoBalance:
-		return Number{}, RequestError{
-			RequestName: getNumberAction,
-			Err:         ErrNoBalance,
-		}
-	case BadKey:
-		return Number{}, RequestError{
-			RequestName: getNumberAction,
-			Err:         ErrBadKey,
-		}
-	case ErrorSQL:
-		return Number{}, RequestError{
-			RequestName: getNumberAction,
-			Err:         ErrSQL,
-		}
-	case NoNumbers:
-		return Number{}, RequestError{
-			RequestName: getNumberAction,
-			Err:         ErrNoNumbers,
-		}
+	case noBalanceMsg:
+		return Number{}, ErrNoBalance
+	case badKeyMsg:
+		return Number{}, ErrBadKey
+	case errorSQLMsg:
+		return Number{}, ErrSQL
+	case noNumbersMsg:
+		return Number{}, ErrNoNumbers
 	}
 
 	var num Number
+
 	err = json.Unmarshal(body, &num)
 	if err != nil {
-		return Number{}, RequestError{
-			RequestName: getNumberAction,
-			Err:         fmt.Errorf("%w: %w", ErrUnmarshalling, err),
-		}
+		return Number{}, err
 	}
 	return num, nil
 }
