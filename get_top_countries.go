@@ -9,9 +9,7 @@ import (
 	"github.com/google/go-querystring/query"
 )
 
-const (
-	topCountriesAction = "getTopCountriesByService"
-)
+const topCountriesAction = "getTopCountriesByService"
 
 type (
 	TopCountriesList map[string]TopCountriesInfo
@@ -86,7 +84,6 @@ func (act *SMSActivate) GetTopCountries(service string, freePrice bool) (TopCoun
 	if err != nil {
 		return nil, err
 	}
-	//fmt.Println(string(body))
 
 	var data TopCountriesList
 
